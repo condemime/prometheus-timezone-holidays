@@ -2,7 +2,7 @@ groups:
 - name: datetime
   interval: 30s
   rules:
-  - record: daylight_saving_time_belgium
+  - record: daylight_saving_time_france
     expr: |
       (vector(0) and (month() < 3 or month() > 10))
       or
@@ -19,79 +19,79 @@ groups:
       (vector(1) and ((month()==10 and hour() < 1) or (month()==3 and hour() > 0)))
       or
       vector(0)
-  - record: belgium_localtime
+  - record: france_localtime
     expr: |
-       time() + 3600 + 3600 * daylight_saving_time_belgium
+       time() + 3600 + 3600 * daylight_saving_time_france
   - record: business_day
     expr: |
-       vector(1) and day_of_week(belgium_localtime) > 0 and day_of_week(belgium_localtime) < 6 unless count(public_holiday)
-  - record: belgium_hour
+       vector(1) and day_of_week(france_localtime) > 0 and day_of_week(france_localtime) < 6 unless count(public_holiday)
+  - record: france_hour
     expr: |
-       hour(belgium_localtime)
+       hour(france_localtime)
   - record: business_hour
     expr: |
-       vector(1) and belgium_hour >= 8 < 18 and business_day
+       (vector(1) and france_hour > 7 < 18 and business_day)
+       or
+       (vector(1) and france_hour == 7 and minute(france_localtime)>=30 and business_day)
+       or 
+       (vector(1) and france_hour == 18 and minute(france_localtime)<=30 and business_day)
   - record: extended_business_hour
     expr: |
-       (vector(1) and belgium_hour >= 7 < 20 and business_day)
-  - record: extended_business_hour_sat
-    expr: |
-       extended_business_hour
-       or (vector(1) and belgium_hour >= 7 < 14 and day_of_week(belgium_localtime) == 6 unless count(public_holiday))
+       (vector(1) and france_hour >= 7 < 19 and business_day)
   - record: daylight
     expr: |
-       vector(1) and belgium_hour >= 8 < 18
-  - record: extended_daylight
-    expr: |
-       vector(1) and belgium_hour >= 7 < 20
+       vector(1) and france_hour >= 7 < 22
+  #- record: extended_daylight
+  #  expr: |
+  #     vector(1) and france_hour >= 7 < 20
   - record: public_holiday
     expr: |
-       vector(1) and day_of_month(belgium_localtime-86400) == easter_day and month(belgium_localtime-86400) == easter_month
+       vector(1) and day_of_month(france_localtime-86400) == easter_day and month(france_localtime-86400) == easter_month
     labels:
        name: Easter Monday
   - record: public_holiday
     expr: |
-       vector(1) and day_of_month(belgium_localtime-39*86400) == easter_day and month(belgium_localtime-39*86400) == easter_month
+       vector(1) and day_of_month(france_localtime-39*86400) == easter_day and month(france_localtime-39*86400) == easter_month
     labels:
        name: Feast of the Ascension
   - record: public_holiday
     expr: |
-       vector(1) and day_of_month(belgium_localtime-50*86400) == easter_day and month(belgium_localtime-50*86400) == easter_month
+       vector(1) and day_of_month(france_localtime-50*86400) == easter_day and month(france_localtime-50*86400) == easter_month
     labels:
        name: Whit Monday
   - record: public_holiday
     expr: |
-       vector(1) and day_of_month(belgium_localtime) == 1 and month(belgium_localtime) == 1
+       vector(1) and day_of_month(france_localtime) == 1 and month(france_localtime) == 1
     labels:
        name: New Year
   - record: public_holiday
     expr: |
-       vector(1) and day_of_month(belgium_localtime) == 1 and month(belgium_localtime) == 5
+       vector(1) and day_of_month(france_localtime) == 1 and month(france_localtime) == 5
     labels:
        name: Labour Day
   - record: public_holiday
     expr: |
-       vector(1) and day_of_month(belgium_localtime) == 21 and month(belgium_localtime) == 7
+       vector(1) and day_of_month(france_localtime) == 14 and month(france_localtime) == 7
     labels:
-       name: Belgian National Day
+       name: French National Day
   - record: public_holiday
     expr: |
-       vector(1) and day_of_month(belgium_localtime) == 15 and month(belgium_localtime) == 8
+       vector(1) and day_of_month(france_localtime) == 15 and month(france_localtime) == 8
     labels:
        name: Assumption of Mary
   - record: public_holiday
     expr: |
-       vector(1) and day_of_month(belgium_localtime) == 1 and month(belgium_localtime) == 11
+       vector(1) and day_of_month(france_localtime) == 1 and month(france_localtime) == 11
     labels:
        name: All Saints Day
   - record: public_holiday
     expr: |
-       vector(1) and day_of_month(belgium_localtime) == 11 and month(belgium_localtime) == 11
+       vector(1) and day_of_month(france_localtime) == 11 and month(france_localtime) == 11
     labels:
        name: Armistice of 11 November 1918
   - record: public_holiday
     expr: |
-       vector(1) and day_of_month(belgium_localtime) == 25 and month(belgium_localtime) == 12
+       vector(1) and day_of_month(france_localtime) == 25 and month(france_localtime) == 12
     labels:
        name: Xmas
   - alert: Time Window - Night
@@ -102,14 +102,14 @@ groups:
     expr: absent(business_hour)
     labels:
         recipient: none
-  - alert: Time Window - Extended Night
-    expr: absent(extended_daylight)
-    labels:
-        recipient: none
-  - alert: Time Window - Extended OBH with Saturday
-    expr: absent(extended_business_hour_sat)
-    labels:
-        recipient: none
+  #- alert: Time Window - Extended Night
+  #  expr: absent(extended_daylight)
+  #  labels:
+  #      recipient: none
+  #- alert: Time Window - Extended OBH with Saturday
+  #  expr: absent(extended_business_hour_sat)
+  #  labels:
+  #      recipient: none
   - alert: Time Window - Extended OBH
     expr: absent(extended_business_hour)
     labels:
@@ -118,7 +118,7 @@ groups:
   interval: 60s
   rules:
     - record: easter_y
-      expr: year(belgium_localtime)
+      expr: year(france_localtime)
     - record: easter_a
       expr: easter_y % 19
     - record: easter_b
