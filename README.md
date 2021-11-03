@@ -1,5 +1,7 @@
 # Prometheus & Alertmanager business hours support
 
+Forked and modified for french IT
+
 This repo contains example configuration that we use to provide timezone and
 public-holidays aware alerts to Prometheus and Alertmanager.
 
